@@ -3,6 +3,11 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import os
+import sys
+from pathlib import Path
+
+# Add project root to path
+ROOT_DIR = Path(__file__).resolve().parent
 
 # 1. Page Configuration
 st.set_page_config(
@@ -21,13 +26,11 @@ st.markdown("""
         font-family: 'Plus Jakarta Sans', sans-serif;
     }
     
-    /* Background & Main Container */
     .stApp {
         background-color: #FAFAFA;
         color: #1A1A1A;
     }
     
-    /* Header Card */
     .header-container {
         background-color: #FFFFFF;
         border: 1px solid #E5E7EB;
@@ -50,7 +53,6 @@ st.markdown("""
         font-weight: 400;
     }
 
-    /* Minimal Metric Cards */
     .metric-card {
         background-color: #FFFFFF;
         border: 1px solid #E5E7EB;
@@ -72,7 +74,6 @@ st.markdown("""
         margin-top: 6px;
     }
 
-    /* Content Cards */
     .content-box {
         background-color: #FFFFFF;
         border: 1px solid #E5E7EB;
@@ -95,7 +96,6 @@ st.markdown("""
         line-height: 1.65;
     }
 
-    /* Callout Note */
     .callout-box {
         background-color: #F8FAFC;
         border-left: 4px solid #0F172A;
@@ -109,12 +109,20 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 3. Data Loading
+# 3. Resilient Data Loading
 @st.cache_data
 def load_data():
-    csv_path = "data/processed_episodes.csv"
-    if not os.path.exists(csv_path):
-        return None
+    csv_path = ROOT_DIR / "data" / "processed_episodes.csv"
+    raw_path = ROOT_DIR / "data" / "raw_episodes.csv"
+    
+    if not csv_path.exists():
+        # Fallback: Generate processed file if raw file exists
+        if raw_path.exists():
+            from src.process_features import process_episodes
+            process_episodes(str(raw_path), str(csv_path))
+        else:
+            return None
+            
     df = pd.read_csv(csv_path)
     df["published_at"] = pd.to_datetime(df["published_at"])
     return df
@@ -130,7 +138,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 if df is None:
-    st.error("Processed data file not found. Please run `python src/process_features.py` first.")
+    st.error("Data files not found in the repository. Ensure both `data/raw_episodes.csv` and `data/processed_episodes.csv` are committed to GitHub.")
     st.stop()
 
 # 5. Top KPI Row
