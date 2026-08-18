@@ -14,26 +14,18 @@ Modern media companies scale through data-informed editorial decisions and rapid
 
 ## 🏗️ Architecture Pipeline
 
-┌────────────────────────┐
-│  YouTube Data API v3   │  (Verified channel metadata: views, likes, comments, duration)
-└───────────┬────────────┘
-│
-▼
-┌────────────────────────┐
-│ Ingestion & Resiliency │  (Session pooling, retry backoff, IPv4 socket routing)
-└───────────┬────────────┘
-│
-▼
-┌────────────────────────┐
-│  Feature Engineering   │  (Velocity index, engagement %, content taxonomy classification)
-└───────────┬────────────┘
-│
-▼
-┌────────────────────────┐
-│  Streamlit Dash & UI   │  (Outlier tracking, supply vs. demand gap analysis, dossier generator)
-└────────────────────────┘
+```mermaid
+flowchart TD
+    A["🎥 YouTube Data API v3<br>(Verified metadata: views, likes, comments, duration)"] 
+    --> B["🛡️ Ingestion & Resiliency<br>(Session pooling, retry backoff, IPv4 socket routing)"]
+    --> C["⚙️ Feature Engineering<br>(Velocity index, engagement %, content taxonomy classification)"]
+    --> D["📊 Streamlit Intelligence Studio<br>(Outlier tracking, supply vs. demand matrix, guest dossier generator)"]
 
----
+    style A fill:#ffffff,stroke:#e5e7eb,stroke-width:2px,color:#111827
+    style B fill:#ffffff,stroke:#e5e7eb,stroke-width:2px,color:#111827
+    style C fill:#ffffff,stroke:#e5e7eb,stroke-width:2px,color:#111827
+    style D fill:#ffffff,stroke:#2563eb,stroke-width:2px,color:#111827
+```
 
 ## 🔍 Key Data Insights (Based on 60+ Analyzed Episodes)
 
