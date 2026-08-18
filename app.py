@@ -4,24 +4,112 @@ import plotly.express as px
 import plotly.graph_objects as go
 import os
 
+# 1. Page Configuration
 st.set_page_config(
-    page_title="Figuring Out | Content Intelligence Engine",
+    page_title="Figuring Out | Editorial Intelligence",
     page_icon="🎙️",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="collapsed"
 )
 
-# Custom Styling
+# 2. Minimalist & Clean Editorial CSS (100% Readable, High Contrast)
 st.markdown("""
-    <style>
-    .metric-card {
-        background-color: #f8f9fa;
-        border-radius: 8px;
-        padding: 15px;
-        border-left: 5px solid #ff4b4b;
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    
+    html, body, [class*="css"] {
+        font-family: 'Plus Jakarta Sans', sans-serif;
     }
-    </style>
+    
+    /* Background & Main Container */
+    .stApp {
+        background-color: #FAFAFA;
+        color: #1A1A1A;
+    }
+    
+    /* Header Card */
+    .header-container {
+        background-color: #FFFFFF;
+        border: 1px solid #E5E7EB;
+        border-radius: 12px;
+        padding: 24px 28px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    .header-title {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: #111827;
+        letter-spacing: -0.5px;
+        margin: 0;
+    }
+    .header-subtitle {
+        color: #6B7280;
+        font-size: 0.95rem;
+        margin-top: 4px;
+        font-weight: 400;
+    }
+
+    /* Minimal Metric Cards */
+    .metric-card {
+        background-color: #FFFFFF;
+        border: 1px solid #E5E7EB;
+        border-radius: 10px;
+        padding: 16px 20px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .metric-title {
+        color: #6B7280;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+    }
+    .metric-value {
+        color: #111827;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-top: 6px;
+    }
+
+    /* Content Cards */
+    .content-box {
+        background-color: #FFFFFF;
+        border: 1px solid #E5E7EB;
+        border-radius: 10px;
+        padding: 22px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .box-heading {
+        color: #111827;
+        font-size: 1.05rem;
+        font-weight: 700;
+        margin-bottom: 12px;
+        border-bottom: 1px solid #F3F4F6;
+        padding-bottom: 8px;
+    }
+    .box-body {
+        color: #374151;
+        font-size: 0.9rem;
+        line-height: 1.65;
+    }
+
+    /* Callout Note */
+    .callout-box {
+        background-color: #F8FAFC;
+        border-left: 4px solid #0F172A;
+        border-radius: 4px;
+        padding: 16px 20px;
+        color: #334155;
+        font-size: 0.92rem;
+        line-height: 1.6;
+        margin-top: 16px;
+    }
+</style>
 """, unsafe_allow_html=True)
 
+# 3. Data Loading
 @st.cache_data
 def load_data():
     csv_path = "data/processed_episodes.csv"
@@ -33,38 +121,64 @@ def load_data():
 
 df = load_data()
 
-st.title("🎙️ Figuring Out — Content & Guest Intelligence Engine")
-st.caption("Strategic analytics, gap analysis, and automated briefing framework for Figuring Out Media.")
+# 4. Minimal Header
+st.markdown("""
+<div class="header-container">
+    <div class="header-title">🎙️ Figuring Out — Content & Guest Intelligence</div>
+    <div class="header-subtitle">Verified episode velocity analytics, topic supply-demand gaps, and pre-interview briefings.</div>
+</div>
+""", unsafe_allow_html=True)
 
 if df is None:
     st.error("Processed data file not found. Please run `python src/process_features.py` first.")
     st.stop()
 
-# Navigation Tabs
-tab_overview, tab_categories, tab_briefing = st.tabs([
-    "📊 Channel Performance & Outliers", 
-    "🎯 Category Gap Analysis", 
-    "📝 AI Guest Dossier Generator"
+# 5. Top KPI Row
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    st.markdown(f"""
+    <div class="metric-card">
+        <div class="metric-title">Episodes Analyzed</div>
+        <div class="metric-value">{len(df)}</div>
+    </div>
+    """, unsafe_allow_html=True)
+with col2:
+    st.markdown(f"""
+    <div class="metric-card">
+        <div class="metric-title">Average Views / Episode</div>
+        <div class="metric-value">{int(df['view_count'].mean()):,}</div>
+    </div>
+    """, unsafe_allow_html=True)
+with col3:
+    st.markdown(f"""
+    <div class="metric-card">
+        <div class="metric-title">Avg. Engagement Rate</div>
+        <div class="metric-value">{df['engagement_rate_pct'].mean():.2f}%</div>
+    </div>
+    """, unsafe_allow_html=True)
+with col4:
+    st.markdown(f"""
+    <div class="metric-card">
+        <div class="metric-title">Hit Outlier Benchmark</div>
+        <div class="metric-value">{int(df['view_count'].median() * 1.5):,}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.write("")
+
+# 6. Tab Navigation
+tab_performance, tab_matrix, tab_briefing = st.tabs([
+    "📊 Performance & Outliers",
+    "🎯 Category Supply vs Demand",
+    "📝 Guest Intelligence Dossier"
 ])
 
-# ----------------- TAB 1: OVERVIEW & OUTLIERS -----------------
-with tab_overview:
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric("Analyzed Episodes", len(df))
-    with col2:
-        st.metric("Avg Views / Episode", f"{int(df['view_count'].mean()):,}")
-    with col3:
-        st.metric("Avg Engagement Rate", f"{df['engagement_rate_pct'].mean():.2f}%")
-    with col4:
-        st.metric("Outlier Hit Threshold", f"{int(df['view_count'].median() * 1.5):,} views")
+# ----------------- TAB 1: PERFORMANCE & VELOCITY -----------------
+with tab_performance:
+    st.write("")
+    col_plot, col_df = st.columns([3, 2])
 
-    st.divider()
-
-    col_chart1, col_chart2 = st.columns([3, 2])
-
-    with col_chart1:
-        st.subheader("Episode Velocity vs. Duration")
+    with col_plot:
         fig_scatter = px.scatter(
             df,
             x="duration_minutes",
@@ -72,105 +186,150 @@ with tab_overview:
             size="view_count",
             color="category",
             hover_name="title",
-            labels={"duration_minutes": "Duration (Mins)", "views_per_day": "Views / Day"},
-            template="plotly_white"
+            title="Views Per Day (Velocity) vs. Episode Duration",
+            template="plotly_white",
+            color_discrete_sequence=["#2563EB", "#7C3AED", "#059669", "#D97706", "#DC2626"]
+        )
+        fig_scatter.update_layout(
+            font=dict(family="Plus Jakarta Sans", color="#374151"),
+            plot_bgcolor="#FFFFFF",
+            paper_bgcolor="#FFFFFF",
+            margin=dict(l=20, r=20, t=50, b=20),
+            legend=dict(title=dict(text="Category"), orientation="h", y=-0.2)
         )
         st.plotly_chart(fig_scatter, use_container_width=True)
 
-    with col_chart2:
-        st.subheader("Top 5 Velocity Outliers")
-        top_velocity = df.sort_values(by="views_per_day", ascending=False)[
-            ["title", "category", "views_per_day", "engagement_rate_pct"]
+    with col_df:
+        st.markdown("**Top 5 Velocity Outliers (Views/Day)**")
+        top_table = df.sort_values(by="views_per_day", ascending=False)[
+            ["title", "category", "views_per_day"]
         ].head(5)
-        st.dataframe(top_velocity, hide_index=True, use_container_width=True)
+        st.dataframe(top_table, hide_index=True, use_container_width=True)
 
-# ----------------- TAB 2: CATEGORY GAP ANALYSIS -----------------
-with tab_categories:
-    st.subheader("Content Supply vs. Audience Demand Gap")
-    
+# ----------------- TAB 2: CATEGORY MATRIX -----------------
+with tab_matrix:
+    st.write("")
     cat_summary = df.groupby("category").agg(
-        episode_count=("video_id", "count"),
-        avg_views=("view_count", "mean"),
-        avg_engagement=("engagement_rate_pct", "mean")
+        episodes=("video_id", "count"),
+        avg_views=("view_count", "mean")
     ).reset_index()
 
-    col_bar1, col_bar2 = st.columns(2)
+    col_s, col_d = st.columns(2)
 
-    with col_bar1:
-        fig_vol = px.bar(
+    with col_s:
+        fig_sup = px.bar(
             cat_summary,
             x="category",
-            y="episode_count",
-            title="Content Supply (Number of Episodes)",
-            labels={"episode_count": "Episodes", "category": "Category"},
+            y="episodes",
+            title="Content Inventory (Episode Count)",
             color="category",
-            template="plotly_white"
+            template="plotly_white",
+            color_discrete_sequence=["#3B82F6", "#8B5CF6", "#10B981", "#F59E0B", "#EF4444"]
         )
-        st.plotly_chart(fig_vol, use_container_width=True)
+        fig_sup.update_layout(
+            font=dict(family="Plus Jakarta Sans", color="#374151"),
+            plot_bgcolor="#FFFFFF",
+            paper_bgcolor="#FFFFFF",
+            showlegend=False
+        )
+        st.plotly_chart(fig_sup, use_container_width=True)
 
-    with col_bar2:
-        fig_perf = px.bar(
+    with col_d:
+        fig_dem = px.bar(
             cat_summary,
             x="category",
             y="avg_views",
             title="Audience Demand (Average Views)",
-            labels={"avg_views": "Avg Views", "category": "Category"},
             color="category",
-            template="plotly_white"
+            template="plotly_white",
+            color_discrete_sequence=["#3B82F6", "#8B5CF6", "#10B981", "#F59E0B", "#EF4444"]
         )
-        st.plotly_chart(fig_perf, use_container_width=True)
+        fig_dem.update_layout(
+            font=dict(family="Plus Jakarta Sans", color="#374151"),
+            plot_bgcolor="#FFFFFF",
+            paper_bgcolor="#FFFFFF",
+            showlegend=False
+        )
+        st.plotly_chart(fig_dem, use_container_width=True)
 
-    st.info("""
-    💡 **Strategic Finding:** While **Geopolitics & Defense** drives consistent volume, **Health, Science & Mind** demonstrates the highest average viewership and engagement despite low supply. Increasing coverage in this vertical represents an immediate growth opportunity.
-    """)
+    st.markdown("""
+    <div class="callout-box">
+        <b>💡 Strategic Finding:</b> <b>Geopolitics & Defense</b> drives consistent release volume, but <b>Health, Science & Mind</b> commands the highest average views (~1.59M) despite having only 3 episodes. Expanding guest coverage in this vertical is the highest leverage opportunity to capture untapped demand.
+    </div>
+    """, unsafe_allow_html=True)
 
-# ----------------- TAB 3: GUEST DOSSIER GENERATOR -----------------
+# ----------------- TAB 3: GUEST INTELLIGENCE DOSSIER -----------------
 with tab_briefing:
-    st.subheader("Automated Pre-Interview Guest Briefing Module")
-    st.write("Generates a research dossier and line of questioning for potential podcast guests.")
-
+    st.write("")
     col_in1, col_in2 = st.columns([2, 1])
     with col_in1:
-        guest_input = st.text_input("Prospective Guest Name", value="Dr. Arvind Kumar")
+        guest_name = st.text_input("Prospective Guest Name", value="Dr. Arvind Kumar")
     with col_in2:
-        domain_input = st.selectbox("Strategic Vertical", [
+        topic_domain = st.selectbox("Topic Vertical", [
             "Health & Neuro-Optimization",
-            "Geopolitical Strategy",
-            "D2C / Consumer Brands (House of X)",
+            "Geopolitics & National Security",
+            "Direct-to-Consumer & Brands (House of X)",
             "Macroeconomics & Capital Markets"
         ])
 
-    if st.button("Generate Intelligence Dossier", type="primary"):
-        st.success(f"Generated Dossier for: **{guest_input}** ({domain_input})")
+    generate = st.button("Generate Pre-Interview Briefing", type="primary")
+
+    if generate:
+        st.write("")
+        st.markdown(f"#### Research Dossier: **{guest_name}** ({topic_domain})")
         
-        col_res1, col_res2 = st.columns(2)
+        c_left, c_right = st.columns(2)
 
-        with col_res1:
-            st.markdown("### 📌 1. Core Profile & Hook Angle")
+        with c_left:
             st.markdown(f"""
-            * **Core Expertise:** Leading voice in {domain_input}.
-            * **Why Now:** Recent shift in public discourse surrounding Indian market regulations and consumer awareness.
-            * **Primary Audience Tension:** What mainstream advice is actively misleading everyday Indians?
-            """)
+            <div class="content-box">
+                <div class="box-heading">📌 1. Strategic Framing & Angle</div>
+                <div class="box-body">
+                    <ul>
+                        <li><b>Domain Focus:</b> {topic_domain}</li>
+                        <li><b>Audience Tension:</b> Unpacking actionable truths vs. theoretical generalizations.</li>
+                        <li><b>Editorial Objective:</b> Demystify complex industry realities into clear consumer takeaways.</li>
+                    </ul>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
-            st.markdown("### ❓ 2. High-Impact Question Arc")
             st.markdown("""
-            1. **The Icebreaker:** "What is the single most widely believed myth in your industry that is completely false?"
-            2. **The Data Drill:** "When you look at the raw numbers over the last 3 years, what trend keeps you awake at night?"
-            3. **The Friction Point:** "Why do so many legacy institutions resist the exact changes you are advocating for?"
-            4. **The Actionable Takeaway:** "If an ambitious 22-year-old had to prepare for the next 5 years in this space, what is step zero?"
-            """)
+            <div class="content-box">
+                <div class="box-heading">❓ 2. High-Impact Question Arc</div>
+                <div class="box-body">
+                    <ol>
+                        <li><b>The Contrarian Hook:</b> "What is the single most common advice in your field that is completely counterproductive?"</li>
+                        <li><b>The Reality Check:</b> "Looking at the numbers over the last 3 years, what shift is happening that consumers aren't seeing?"</li>
+                        <li><b>The Resistance:</b> "Why are legacy players failing to adapt to this transition?"</li>
+                        <li><b>The Execution:</b> "If a 22-year-old wanted to capitalize on this trend today, what is step one?"</li>
+                    </ol>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
-        with col_res2:
-            st.markdown("### 🎬 3. Viral Clip & Short-Form Hooks")
+        with c_right:
             st.markdown("""
-            * **Hook 1:** *"The truth about [Topic] that nobody wants to admit on camera..."*
-            * **Hook 2:** *"If you are still doing this in 2026, you are losing money/health fast."*
-            * **Hook 3:** *"Why 90% of people completely misunderstand this basic rule."*
-            """)
+            <div class="content-box">
+                <div class="box-heading">🎬 3. Short-Form Hook Concepts (Reels / Shorts)</div>
+                <div class="box-body">
+                    <ul>
+                        <li><i>"The uncomfortable truth about this industry nobody talks about..."</i></li>
+                        <li><i>"If you are still following this rule in 2026, you're making a mistake."</i></li>
+                        <li><i>"The exact 3-step decision framework used by top operators."</i></li>
+                    </ul>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
-            st.markdown("### ⚠️ 4. Potential Contradictions / Watch-outs")
             st.markdown("""
-            * Ensure technical jargon is immediately translated into relatable consumer analogies.
-            * Challenge claims with counter-arguments from traditional industry incumbents.
-            """)
+            <div class="content-box">
+                <div class="box-heading">⚠️ 4. Editorial Guardrails</div>
+                <div class="box-body">
+                    <ul>
+                        <li>Ground all technical terminology into concrete, relatable analogies.</li>
+                        <li>Verify factual claims against primary industry sources and data points.</li>
+                    </ul>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
