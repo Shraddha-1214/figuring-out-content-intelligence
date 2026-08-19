@@ -336,18 +336,21 @@ with tab_briefing:
 with tab_repurpose:
     st.write("")
     st.markdown("### 🎬 Verified Video Chapter & Clip Intelligence")
-    st.caption("Extracts exact timestamps, actual episode topics, and House of X brand opportunities using real video data.")
+    st.caption("Extracts exact timestamps, actual episode topics, and House of X brand opportunities across the entire podcast duration.")
 
     col_v1, col_v2 = st.columns([2, 1])
     with col_v1:
         vid_input = st.text_input("YouTube Episode URL or Video ID", value="https://www.youtube.com/watch?v=sample")
     with col_v2:
         vert_input = st.selectbox("Product Synergy Vertical", [
-            "Education & Competitive Exams",
+            "True Crime & Forensic Psychology",
             "Geopolitics & National Security",
-            "Health & Nutrition", 
-            "Finance & Wealth", 
-            "Consumer Lifestyle & Tech"
+            "Education & Competitive Exams",
+            "Business, Startups & Venture Capital",
+            "Health, Biohacking & Neuroscience", 
+            "Personal Finance & Wealth", 
+            "Spirituality, Philosophy & Ancient History",
+            "Culture & Creator Economy"
         ], key="synergy_vertical_select")
 
     if st.button("Extract Verified Clips & Commerce Angles", type="primary", key="btn_extract_clips"):
@@ -355,7 +358,7 @@ with tab_repurpose:
         
         v_id = extract_video_id(vid_input)
         
-        with st.spinner("Extracting verified chapters and metadata from YouTube..."):
+        with st.spinner("Extracting complete chapter timeline and metadata across entire episode..."):
             ep_title, clips, err_msg = calculate_real_clip_intelligence(v_id, vert_input)
             brand_angle = generate_house_of_x_angle(vert_input)
 
@@ -364,15 +367,15 @@ with tab_repurpose:
         else:
             st.write("")
             st.markdown(f"#### 📺 Episode: **{ep_title}**")
-            st.markdown(f"**Target Vertical:** `{vert_input}`")
+            st.caption(f"Total Highlights Extracted: **{len(clips)} chapters across full runtime** | Vertical: `{vert_input}`")
             st.write("")
             
-            st.markdown("#### 🔥 Authentic Video Highlights (Extracted from Episode Data)")
+            st.markdown("#### 🔥 Complete Episode Timeline & Short-Form Hooks")
             
             for idx, seg in enumerate(clips, 1):
                 st.markdown(f"""
                 <div class="content-box">
-                    <div class="box-heading">Clip #{idx} — Timestamp: <b>{seg['start']}</b> <span style="font-size:0.8rem; color:#6B7280; margin-left:8px;">({seg['source']})</span></div>
+                    <div class="box-heading">Chapter #{idx} — Timestamp: <b>{seg['start']}</b> <span style="font-size:0.8rem; color:#6B7280; margin-left:8px;">({seg['source']})</span></div>
                     <div class="box-body">
                         <p><b>Topic / Insight:</b> {seg['headline']}</p>
                         <p><b>Summary:</b> <i>"{seg['quote']}"</i></p>
