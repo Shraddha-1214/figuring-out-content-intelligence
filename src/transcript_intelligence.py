@@ -152,18 +152,30 @@ def fetch_and_segment_transcript(video_input, vertical="Health & Nutrition"):
     return meta.get("title", "Episode Analysis"), generate_dynamic_clips_from_meta(meta, vertical)
 
 def generate_house_of_x_angle(guest_vertical, video_title=""):
-    """Generates tailored D2C brand incubation ideas for House of X based on the vertical and title context."""
+    """Generates tailored D2C brand incubation opportunities tailored for House of X across all podcast domains."""
     strategies = {
+        "Geopolitics & National Security": {
+            "white_space": "Tactical/rugged everyday carry (EDC) gear, durable travel apparel, and curated geopolitical/strategic book-boxes.",
+            "demographic": "18–35 ambitious youths, defense enthusiasts, and competitive exam aspirants.",
+            "wedge": "Case-study breakdowns on global supply chains leading into high-durability utility merchandise drops.",
+            "unit_economics": "High perceived utility, low seasonal return rate, 65-70% gross margins on apparel and gear."
+        },
+        "Education & Competitive Exams": {
+            "white_space": "Vernacular physical-plus-digital study toolkits: active-recall memory cards, structured exam revision binders, and cognitive productivity kits.",
+            "demographic": "Tier 2/3 aspirants (UPSC, State PSC, Defence, SSC) and college students.",
+            "wedge": "High-trust educational breakdown clips paired with affordable, high-utility offline study frameworks.",
+            "unit_economics": "High volume mass-market distribution, organic word-of-mouth adoption, low customer acquisition cost (CAC)."
+        },
         "Health & Nutrition": {
-            "white_space": "Functional daily recovery blends & targeted micronutrient stacks formulated specifically for urban Indian stress and diet gaps.",
-            "demographic": "22–35 working professionals, founders, and knowledge workers optimizing cognitive endurance.",
-            "wedge": "Myth-busting educational clips on metabolic fatigue paired with single-ingredient transparency drops.",
+            "white_space": "Functional daily recovery blends & targeted micronutrient stacks formulated specifically for urban Indian diet gaps.",
+            "demographic": "22–35 working professionals and knowledge workers optimizing cognitive endurance.",
+            "wedge": "Myth-busting educational clips on metabolic health paired with transparent, clean-label formulation drops.",
             "unit_economics": "High repeat purchase rate (45-day replenishment cycle), 68-72% target gross margin."
         },
         "Finance & Wealth": {
-            "white_space": "Tangible personal finance operating systems: modular quarterly goal planners and offline wealth tracking journals.",
-            "demographic": "20–30 first-generation salaried earners building their first ₹10L–₹50L net worth portfolios.",
-            "wedge": "Step-by-step financial teardowns leading into high-utility physical execution kits.",
+            "white_space": "Tangible personal finance operating systems: modular quarterly goal planners and physical wealth tracking journals.",
+            "demographic": "20–30 first-generation salaried earners building their first investment portfolios.",
+            "wedge": "Step-by-step financial teardowns leading into high-utility physical execution binders.",
             "unit_economics": "Direct-to-consumer bundling, zero expiry risk, high gift-market seasonality."
         },
         "Consumer Lifestyle & Tech": {
@@ -173,4 +185,4 @@ def generate_house_of_x_angle(guest_vertical, video_title=""):
             "unit_economics": "High Average Order Value (AOV), premium brand positioning, low return rate."
         }
     }
-    return strategies.get(guest_vertical, strategies["Health & Nutrition"])
+    return strategies.get(guest_vertical, strategies["Geopolitics & National Security"])

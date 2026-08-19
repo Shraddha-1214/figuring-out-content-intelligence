@@ -344,6 +344,8 @@ with tab_repurpose:
         vid_input = st.text_input("YouTube Episode URL or Video ID", value="https://www.youtube.com/watch?v=0h6kP8r2V5s")
     with col_v2:
         vert_input = st.selectbox("Product Synergy Vertical", [
+            "Geopolitics & National Security",
+            "Education & Competitive Exams",
             "Health & Nutrition", 
             "Finance & Wealth", 
             "Consumer Lifestyle & Tech"
