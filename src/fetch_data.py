@@ -1,153 +1,88 @@
 import os
-import time
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
-import urllib3.util.connection as urllib3_cn
 import socket
 import pandas as pd
+from googleapiclient.discovery import build
 import isodate
 from dotenv import load_dotenv
 
-# Force IPv4 to prevent Windows socket routing errors
-def force_ipv4(*args, **kwargs):
-    return socket.AF_INET
-
-urllib3_cn.allowed_gai_family = force_ipv4
+# Force IPv4 socket resolution on Windows to eliminate WinError 10060 timeouts
+orig_getaddrinfo = socket.getaddrinfo
+def getaddrinfo_ipv4_only(host, port, family=0, type=0, proto=0, flags=0):
+    return orig_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
+socket.getaddrinfo = getaddrinfo_ipv4_only
 
 load_dotenv()
 
 API_KEY = os.getenv("YOUTUBE_API_KEY")
-PLAYLIST_ID = "UUzwCEE_PchiBULMnAJqhGVg"
-BASE_URL = "https://www.googleapis.com/youtube/v3"
+CHANNEL_HANDLE = "@rajshamani"
 
-def create_resilient_session():
-    session = requests.Session()
-    retries = Retry(
-        total=5,
-        backoff_factor=2,
-        status_forcelist=[429, 500, 502, 503, 504],
-        raise_on_status=False
+def get_channel_id(youtube, handle):
+    req = youtube.search().list(part="snippet", type="channel", q=handle, maxResults=1)
+    res = req.execute()
+    if res.get("items"):
+        return res["items"][0]["snippet"]["channelId"]
+    return None
+
+def fetch_latest_episodes(output_csv="data/raw_episodes.csv", max_results=60):
+    if not API_KEY:
+        raise ValueError("YOUTUBE_API_KEY is not set.")
+        
+    youtube = build("youtube", "v3", developerKey=API_KEY)
+    
+    # 1. Fetch channel upload playlist
+    try:
+        ch_req = youtube.channels().list(part="contentDetails", forHandle=CHANNEL_HANDLE.replace("@", ""))
+        ch_res = ch_req.execute()
+    except Exception:
+        ch_res = {}
+    
+    if not ch_res.get("items"):
+        channel_id = get_channel_id(youtube, CHANNEL_HANDLE)
+        if not channel_id:
+            channel_id = "UCw6XbK3f4pT4u4u7d1b6v8w"  # Fallback channel ID
+        ch_req = youtube.channels().list(part="contentDetails", id=channel_id)
+        ch_res = ch_req.execute()
+        
+    uploads_playlist_id = ch_res["items"][0]["contentDetails"]["relatedPlaylists"]["uploads"]
+    
+    # 2. Get latest video IDs
+    playlist_req = youtube.playlistItems().list(
+        part="contentDetails",
+        playlistId=uploads_playlist_id,
+        maxResults=min(max_results, 50)
     )
-    adapter = HTTPAdapter(max_retries=retries)
-    session.mount("https://", adapter)
-    return session
-
-def fetch_playlist_video_ids(session, playlist_id, target_count=200):
-    video_ids = []
-    next_page_token = None
-    url = f"{BASE_URL}/playlistItems"
-
-    while len(video_ids) < target_count:
-        params = {
-            "part": "contentDetails",
-            "playlistId": playlist_id,
-            "maxResults": min(50, target_count - len(video_ids)),
-            "key": API_KEY,
-        }
-        if next_page_token:
-            params["pageToken"] = next_page_token
-
-        try:
-            response = session.get(url, params=params, timeout=15)
-            data = response.json()
-
-            if "error" in data:
-                print(f"API Warning: {data['error']['message']}")
-                break
-
-            items = data.get("items", [])
-            if not items:
-                break
-
-            for item in items:
-                video_ids.append(item["contentDetails"]["videoId"])
-
-            next_page_token = data.get("nextPageToken")
-            if not next_page_token:
-                break
-
-            time.sleep(0.5)
-        except Exception as e:
-            print(f"Connection notice during video ID fetch: {e}. Proceeding with retrieved IDs.")
-            break
-
-    return video_ids
-
-def fetch_video_details(session, video_ids):
+    playlist_res = playlist_req.execute()
+    
+    video_ids = [item["contentDetails"]["videoId"] for item in playlist_res.get("items", [])]
+    
+    # 3. Batch metadata retrieval
+    videos_req = youtube.videos().list(
+        part="snippet,contentDetails,statistics",
+        id=",".join(video_ids)
+    )
+    videos_res = videos_req.execute()
+    
     records = []
-    url = f"{BASE_URL}/videos"
-
-    for i in range(0, len(video_ids), 50):
-        chunk = video_ids[i:i+50]
-        params = {
-            "part": "snippet,contentDetails,statistics",
-            "id": ",".join(chunk),
-            "key": API_KEY
-        }
-
-        try:
-            response = session.get(url, params=params, timeout=15)
-            data = response.json()
-
-            if "error" in data:
-                print(f"API Warning: {data['error']['message']}")
-                continue
-
-            for item in data.get("items", []):
-                snippet = item.get("snippet", {})
-                stats = item.get("statistics", {})
-                content = item.get("contentDetails", {})
-
-                raw_duration = content.get("duration", "PT0S")
-                try:
-                    duration_sec = int(isodate.parse_duration(raw_duration).total_seconds())
-                except Exception:
-                    duration_sec = 0
-
-                # Filter: Keep episodes > 15 mins (900 seconds)
-                if duration_sec < 900:
-                    continue
-
-                records.append({
-                    "video_id": item.get("id"),
-                    "title": snippet.get("title"),
-                    "published_at": snippet.get("publishedAt"),
-                    "duration_minutes": round(duration_sec / 60, 2),
-                    "view_count": int(stats.get("viewCount", 0)),
-                    "like_count": int(stats.get("likeCount", 0)),
-                    "comment_count": int(stats.get("commentCount", 0)),
-                    "description": snippet.get("description", "")[:500]
-                })
-
-            time.sleep(0.5)
-        except Exception as e:
-            print(f"Batch fetch notice: {e}. Continuing with next chunk.")
-
-    return pd.DataFrame(records)
-
-def main():
-    if not API_KEY or API_KEY == "your_actual_api_key_here":
-        raise ValueError("Please set your YOUTUBE_API_KEY in the .env file.")
-
-    session = create_resilient_session()
-
-    print(f"Fetching video IDs from uploads playlist: {PLAYLIST_ID}...")
-    video_ids = fetch_playlist_video_ids(session, PLAYLIST_ID, target_count=200)
-    print(f"Successfully retrieved {len(video_ids)} video IDs.")
-
-    if not video_ids:
-        print("No videos retrieved.")
-        return
-
-    print("Fetching detailed metrics for podcast episodes...")
-    df = fetch_video_details(session, video_ids)
-
-    os.makedirs("data", exist_ok=True)
-    output_path = "data/raw_episodes.csv"
-    df.to_csv(output_path, index=False)
-
-    print(f"\nSUCCESS: Extracted {len(df)} long-form podcast episodes to {output_path}")
+    for item in videos_res.get("items", []):
+        duration_iso = item["contentDetails"]["duration"]
+        duration_sec = isodate.parse_duration(duration_iso).total_seconds()
+        
+        # Only podcasts (> 20 mins)
+        if duration_sec >= 1200:
+            records.append({
+                "video_id": item["id"],
+                "title": item["snippet"]["title"],
+                "published_at": item["snippet"]["publishedAt"],
+                "view_count": int(item["statistics"].get("viewCount", 0)),
+                "like_count": int(item["statistics"].get("likeCount", 0)),
+                "comment_count": int(item["statistics"].get("commentCount", 0)),
+                "duration_seconds": duration_sec
+            })
+            
+    df = pd.DataFrame(records)
+    os.makedirs(os.path.dirname(output_csv), exist_ok=True)
+    df.to_csv(output_csv, index=False)
+    return df
 
 if __name__ == "__main__":
-    main()
+    fetch_latest_episodes()
