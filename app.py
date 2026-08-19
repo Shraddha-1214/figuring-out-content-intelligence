@@ -11,13 +11,13 @@ ROOT_DIR = Path(__file__).resolve().parent
 
 # 1. Page Configuration
 st.set_page_config(
-    page_title="Figuring Out | Editorial Intelligence",
+    page_title="Figuring Out | Editorial & Commerce Intelligence",
     page_icon="🎙️",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# 2. Minimalist & Clean Editorial CSS (100% Readable, High Contrast)
+# 2. Minimalist & Clean Editorial CSS
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -116,7 +116,6 @@ def load_data():
     raw_path = ROOT_DIR / "data" / "raw_episodes.csv"
     
     if not csv_path.exists():
-        # Fallback: Generate processed file if raw file exists
         if raw_path.exists():
             from src.process_features import process_episodes
             process_episodes(str(raw_path), str(csv_path))
@@ -132,13 +131,13 @@ df = load_data()
 # 4. Minimal Header
 st.markdown("""
 <div class="header-container">
-    <div class="header-title">🎙️ Figuring Out — Content & Guest Intelligence</div>
-    <div class="header-subtitle">Verified episode velocity analytics, topic supply-demand gaps, and pre-interview briefings.</div>
+    <div class="header-title">🎙️ Figuring Out — Content & Commerce Intelligence</div>
+    <div class="header-subtitle">Performance velocity tracking, pre-interview research dossiers, and House of X brand-incubation mapping.</div>
 </div>
 """, unsafe_allow_html=True)
 
 if df is None:
-    st.error("Data files not found in the repository. Ensure both `data/raw_episodes.csv` and `data/processed_episodes.csv` are committed to GitHub.")
+    st.error("Data files not found. Please ensure data/processed_episodes.csv is present.")
     st.stop()
 
 # 5. Top KPI Row
@@ -175,10 +174,11 @@ with col4:
 st.write("")
 
 # 6. Tab Navigation
-tab_performance, tab_matrix, tab_briefing = st.tabs([
+tab_performance, tab_matrix, tab_briefing, tab_repurpose = st.tabs([
     "📊 Performance & Outliers",
     "🎯 Category Supply vs Demand",
-    "📝 Guest Intelligence Dossier"
+    "📝 Guest Intelligence Dossier",
+    "⚡ Clip & Brand Intelligence"
 ])
 
 # ----------------- TAB 1: PERFORMANCE & VELOCITY -----------------
@@ -234,12 +234,7 @@ with tab_matrix:
             template="plotly_white",
             color_discrete_sequence=["#3B82F6", "#8B5CF6", "#10B981", "#F59E0B", "#EF4444"]
         )
-        fig_sup.update_layout(
-            font=dict(family="Plus Jakarta Sans", color="#374151"),
-            plot_bgcolor="#FFFFFF",
-            paper_bgcolor="#FFFFFF",
-            showlegend=False
-        )
+        fig_sup.update_layout(font=dict(family="Plus Jakarta Sans", color="#374151"), plot_bgcolor="#FFFFFF", paper_bgcolor="#FFFFFF", showlegend=False)
         st.plotly_chart(fig_sup, use_container_width=True)
 
     with col_d:
@@ -252,12 +247,7 @@ with tab_matrix:
             template="plotly_white",
             color_discrete_sequence=["#3B82F6", "#8B5CF6", "#10B981", "#F59E0B", "#EF4444"]
         )
-        fig_dem.update_layout(
-            font=dict(family="Plus Jakarta Sans", color="#374151"),
-            plot_bgcolor="#FFFFFF",
-            paper_bgcolor="#FFFFFF",
-            showlegend=False
-        )
+        fig_dem.update_layout(font=dict(family="Plus Jakarta Sans", color="#374151"), plot_bgcolor="#FFFFFF", paper_bgcolor="#FFFFFF", showlegend=False)
         st.plotly_chart(fig_dem, use_container_width=True)
 
     st.markdown("""
@@ -341,3 +331,56 @@ with tab_briefing:
                 </div>
             </div>
             """, unsafe_allow_html=True)
+
+# ----------------- TAB 4: CLIP & BRAND INTELLIGENCE -----------------
+
+with tab_repurpose:
+    st.write("")
+    st.markdown("### 🎬 Multimodal Transcript Repurposing & Commerce Mapping")
+    st.caption("Extracts viral clip timestamps, short-form scripts, and House of X brand-incubation opportunities dynamically.")
+
+    col_v1, col_v2 = st.columns([2, 1])
+    with col_v1:
+        vid_input = st.text_input("YouTube Episode URL or Video ID", value="https://www.youtube.com/watch?v=0h6kP8r2V5s")
+    with col_v2:
+        vert_input = st.selectbox("Product Synergy Vertical", [
+            "Health & Nutrition", 
+            "Finance & Wealth", 
+            "Consumer Lifestyle & Tech"
+        ], key="synergy_vertical_select")
+
+    if st.button("Extract Viral Clips & Brand Angles", type="primary", key="btn_extract_clips"):
+        from src.transcript_intelligence import fetch_and_segment_transcript, generate_house_of_x_angle
+        
+        with st.spinner("Analyzing episode audio signals, metadata, and commerce synergies..."):
+            ep_title, segments = fetch_and_segment_transcript(vid_input, vert_input)
+            brand_angle = generate_house_of_x_angle(vert_input, ep_title)
+
+        st.write("")
+        st.markdown(f"#### 📺 Analyzed: **{ep_title}**")
+        st.markdown(f"**Target Vertical:** `{vert_input}`")
+        st.write("")
+        
+        st.markdown("#### 🔥 Top Viral Clip Moments (Ranked by Retention Score)")
+        
+        for idx, seg in enumerate(segments, 1):
+            st.markdown(f"""
+            <div class="content-box">
+                <div class="box-heading">Clip #{idx} — Timestamp: {seg['start']} (Viral Retention Score: <span style="color:#059669; font-weight:800;">{seg['viral_score']}/100</span>)</div>
+                <div class="box-body">
+                    <p><b>Core Insight:</b> {seg['headline']}</p>
+                    <p><b>Key Soundbite:</b> <i>"{seg['quote']}"</i></p>
+                    <p><b>Recommended Reel Hook:</b> <code>{seg['hook']}</code></p>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("#### 🛍️ House of X — Content-to-Commerce Opportunity Map")
+        st.markdown(f"""
+        <div class="callout-box">
+            <p><b>🏷️ Product White-Space:</b> {brand_angle['white_space']}</p>
+            <p><b>🎯 Target Demographic:</b> {brand_angle['demographic']}</p>
+            <p><b>🚀 Distribution Wedge:</b> {brand_angle['wedge']}</p>
+            <p><b>📊 Unit Economics & Moat:</b> {brand_angle['unit_economics']}</p>
+        </div>
+        """, unsafe_allow_html=True)
