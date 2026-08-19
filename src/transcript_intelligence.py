@@ -143,6 +143,12 @@ def calculate_real_clip_intelligence(video_id, vertical):
 def generate_house_of_x_angle(guest_vertical):
     """Generates targeted D2C commerce opportunities for House of X across all podcast verticals."""
     strategies = {
+        "Sports, Athletes & High Performance": {
+            "white_space": "Pro-grade hydration electrolyte mixes, recovery compression wear, and athletic mindset/training performance journals.",
+            "demographic": "16–35 sports enthusiasts, gym athletes, marathoners, and competitive players.",
+            "wedge": "Behind-the-scenes athletic training & recovery protocols leading into clean performance nutrition drops.",
+            "unit_economics": "High repeat subscription rate (30-day replenishment), 70-75% gross margins on sports nutrition."
+        },
         "True Crime & Forensic Psychology": {
             "white_space": "Immersive investigative tabletop games, true-crime physical dossier solve-kits, and tactical personal safety gear.",
             "demographic": "18–34 mystery/thriller enthusiasts, armchair detectives, and forensic psychology followers.",
@@ -192,4 +198,4 @@ def generate_house_of_x_angle(guest_vertical):
             "unit_economics": "High viral coefficient, fast stock sell-outs, community-driven CAC."
         }
     }
-    return strategies.get(guest_vertical, strategies["True Crime & Forensic Psychology"])
+    return strategies.get(guest_vertical, strategies["Sports, Athletes & High Performance"])

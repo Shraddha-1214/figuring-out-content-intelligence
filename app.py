@@ -264,10 +264,15 @@ with tab_briefing:
         guest_name = st.text_input("Prospective Guest Name", value="Dr. Arvind Kumar")
     with col_in2:
         topic_domain = st.selectbox("Topic Vertical", [
-            "Health & Neuro-Optimization",
+            "Sports, Athletes & High Performance",
+            "True Crime & Forensic Psychology",
             "Geopolitics & National Security",
-            "Direct-to-Consumer & Brands (House of X)",
-            "Macroeconomics & Capital Markets"
+            "Education & Competitive Exams",
+            "Business, Startups & Venture Capital",
+            "Health, Biohacking & Neuroscience", 
+            "Personal Finance & Wealth", 
+            "Spirituality, Philosophy & Ancient History",
+            "Culture & Creator Economy"
         ])
 
     generate = st.button("Generate Pre-Interview Briefing", type="primary")
@@ -343,6 +348,7 @@ with tab_repurpose:
         vid_input = st.text_input("YouTube Episode URL or Video ID", value="https://www.youtube.com/watch?v=sample")
     with col_v2:
         vert_input = st.selectbox("Product Synergy Vertical", [
+            "Sports, Athletes & High Performance",
             "True Crime & Forensic Psychology",
             "Geopolitics & National Security",
             "Education & Competitive Exams",
@@ -352,7 +358,7 @@ with tab_repurpose:
             "Spirituality, Philosophy & Ancient History",
             "Culture & Creator Economy"
         ], key="synergy_vertical_select")
-
+        
     if st.button("Extract Verified Clips & Commerce Angles", type="primary", key="btn_extract_clips"):
         from src.transcript_intelligence import extract_video_id, calculate_real_clip_intelligence, generate_house_of_x_angle
         
