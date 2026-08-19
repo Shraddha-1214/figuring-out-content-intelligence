@@ -333,56 +333,60 @@ with tab_briefing:
             """, unsafe_allow_html=True)
 
 # ----------------- TAB 4: CLIP & BRAND INTELLIGENCE -----------------
-
 with tab_repurpose:
     st.write("")
-    st.markdown("### 🎬 Multimodal Transcript Repurposing & Commerce Mapping")
-    st.caption("Extracts viral clip timestamps, short-form scripts, and House of X brand-incubation opportunities dynamically.")
+    st.markdown("### 🎬 Verified Video Chapter & Clip Intelligence")
+    st.caption("Extracts exact timestamps, actual episode topics, and House of X brand opportunities using real video data.")
 
     col_v1, col_v2 = st.columns([2, 1])
     with col_v1:
-        vid_input = st.text_input("YouTube Episode URL or Video ID", value="https://www.youtube.com/watch?v=0h6kP8r2V5s")
+        vid_input = st.text_input("YouTube Episode URL or Video ID", value="https://www.youtube.com/watch?v=sample")
     with col_v2:
         vert_input = st.selectbox("Product Synergy Vertical", [
-            "Geopolitics & National Security",
             "Education & Competitive Exams",
+            "Geopolitics & National Security",
             "Health & Nutrition", 
             "Finance & Wealth", 
             "Consumer Lifestyle & Tech"
         ], key="synergy_vertical_select")
 
-    if st.button("Extract Viral Clips & Brand Angles", type="primary", key="btn_extract_clips"):
-        from src.transcript_intelligence import fetch_and_segment_transcript, generate_house_of_x_angle
+    if st.button("Extract Verified Clips & Commerce Angles", type="primary", key="btn_extract_clips"):
+        from src.transcript_intelligence import extract_video_id, calculate_real_clip_intelligence, generate_house_of_x_angle
         
-        with st.spinner("Analyzing episode audio signals, metadata, and commerce synergies..."):
-            ep_title, segments = fetch_and_segment_transcript(vid_input, vert_input)
-            brand_angle = generate_house_of_x_angle(vert_input, ep_title)
+        v_id = extract_video_id(vid_input)
+        
+        with st.spinner("Extracting verified chapters and metadata from YouTube..."):
+            ep_title, clips, err_msg = calculate_real_clip_intelligence(v_id, vert_input)
+            brand_angle = generate_house_of_x_angle(vert_input)
 
-        st.write("")
-        st.markdown(f"#### 📺 Analyzed: **{ep_title}**")
-        st.markdown(f"**Target Vertical:** `{vert_input}`")
-        st.write("")
-        
-        st.markdown("#### 🔥 Top Viral Clip Moments (Ranked by Retention Score)")
-        
-        for idx, seg in enumerate(segments, 1):
-            st.markdown(f"""
-            <div class="content-box">
-                <div class="box-heading">Clip #{idx} — Timestamp: {seg['start']} (Viral Retention Score: <span style="color:#059669; font-weight:800;">{seg['viral_score']}/100</span>)</div>
-                <div class="box-body">
-                    <p><b>Core Insight:</b> {seg['headline']}</p>
-                    <p><b>Key Soundbite:</b> <i>"{seg['quote']}"</i></p>
-                    <p><b>Recommended Reel Hook:</b> <code>{seg['hook']}</code></p>
+        if err_msg:
+            st.warning(f"⚠️ {err_msg}")
+        else:
+            st.write("")
+            st.markdown(f"#### 📺 Episode: **{ep_title}**")
+            st.markdown(f"**Target Vertical:** `{vert_input}`")
+            st.write("")
+            
+            st.markdown("#### 🔥 Authentic Video Highlights (Extracted from Episode Data)")
+            
+            for idx, seg in enumerate(clips, 1):
+                st.markdown(f"""
+                <div class="content-box">
+                    <div class="box-heading">Clip #{idx} — Timestamp: <b>{seg['start']}</b> <span style="font-size:0.8rem; color:#6B7280; margin-left:8px;">({seg['source']})</span></div>
+                    <div class="box-body">
+                        <p><b>Topic / Insight:</b> {seg['headline']}</p>
+                        <p><b>Summary:</b> <i>"{seg['quote']}"</i></p>
+                        <p><b>Suggested Reel Hook:</b> <code>{seg['hook']}</code></p>
+                    </div>
                 </div>
+                """, unsafe_allow_html=True)
+
+            st.markdown("#### 🛍️ House of X — Content-to-Commerce Opportunity Map")
+            st.markdown(f"""
+            <div class="callout-box">
+                <p><b>🏷️ Product White-Space:</b> {brand_angle['white_space']}</p>
+                <p><b>🎯 Target Demographic:</b> {brand_angle['demographic']}</p>
+                <p><b>🚀 Distribution Strategy:</b> {brand_angle['wedge']}</p>
+                <p><b>📊 Unit Economics & Moat:</b> {brand_angle['unit_economics']}</p>
             </div>
             """, unsafe_allow_html=True)
-
-        st.markdown("#### 🛍️ House of X — Content-to-Commerce Opportunity Map")
-        st.markdown(f"""
-        <div class="callout-box">
-            <p><b>🏷️ Product White-Space:</b> {brand_angle['white_space']}</p>
-            <p><b>🎯 Target Demographic:</b> {brand_angle['demographic']}</p>
-            <p><b>🚀 Distribution Wedge:</b> {brand_angle['wedge']}</p>
-            <p><b>📊 Unit Economics & Moat:</b> {brand_angle['unit_economics']}</p>
-        </div>
-        """, unsafe_allow_html=True)
