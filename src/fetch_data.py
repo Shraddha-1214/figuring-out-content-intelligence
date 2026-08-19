@@ -23,13 +23,13 @@ def get_channel_id(youtube, handle):
         return res["items"][0]["snippet"]["channelId"]
     return None
 
-def fetch_latest_episodes(output_csv="data/raw_episodes.csv", max_results=60):
+def fetch_latest_episodes(output_csv="data/raw_episodes.csv", target_podcast_count=60):
     if not API_KEY:
         raise ValueError("YOUTUBE_API_KEY is not set.")
         
     youtube = build("youtube", "v3", developerKey=API_KEY)
     
-    # 1. Fetch channel upload playlist
+    # 1. Fetch channel uploads playlist ID
     try:
         ch_req = youtube.channels().list(part="contentDetails", forHandle=CHANNEL_HANDLE.replace("@", ""))
         ch_res = ch_req.execute()
@@ -37,49 +37,59 @@ def fetch_latest_episodes(output_csv="data/raw_episodes.csv", max_results=60):
         ch_res = {}
     
     if not ch_res.get("items"):
-        channel_id = get_channel_id(youtube, CHANNEL_HANDLE)
-        if not channel_id:
-            channel_id = "UCw6XbK3f4pT4u4u7d1b6v8w"  # Fallback channel ID
+        channel_id = get_channel_id(youtube, CHANNEL_HANDLE) or "UCw6XbK3f4pT4u4u7d1b6v8w"
         ch_req = youtube.channels().list(part="contentDetails", id=channel_id)
         ch_res = ch_req.execute()
         
     uploads_playlist_id = ch_res["items"][0]["contentDetails"]["relatedPlaylists"]["uploads"]
     
-    # 2. Get latest video IDs
-    playlist_req = youtube.playlistItems().list(
-        part="contentDetails",
-        playlistId=uploads_playlist_id,
-        maxResults=min(max_results, 50)
-    )
-    playlist_res = playlist_req.execute()
+    # 2. Paginate through uploads until target podcast count is reached
+    podcast_records = []
+    next_page_token = None
     
-    video_ids = [item["contentDetails"]["videoId"] for item in playlist_res.get("items", [])]
-    
-    # 3. Batch metadata retrieval
-    videos_req = youtube.videos().list(
-        part="snippet,contentDetails,statistics",
-        id=",".join(video_ids)
-    )
-    videos_res = videos_req.execute()
-    
-    records = []
-    for item in videos_res.get("items", []):
-        duration_iso = item["contentDetails"]["duration"]
-        duration_sec = isodate.parse_duration(duration_iso).total_seconds()
+    while len(podcast_records) < target_podcast_count:
+        playlist_req = youtube.playlistItems().list(
+            part="contentDetails",
+            playlistId=uploads_playlist_id,
+            maxResults=50,
+            pageToken=next_page_token
+        )
+        playlist_res = playlist_req.execute()
         
-        # Only podcasts (> 20 mins)
-        if duration_sec >= 1200:
-            records.append({
-                "video_id": item["id"],
-                "title": item["snippet"]["title"],
-                "published_at": item["snippet"]["publishedAt"],
-                "view_count": int(item["statistics"].get("viewCount", 0)),
-                "like_count": int(item["statistics"].get("likeCount", 0)),
-                "comment_count": int(item["statistics"].get("commentCount", 0)),
-                "duration_seconds": duration_sec
-            })
+        video_ids = [item["contentDetails"]["videoId"] for item in playlist_res.get("items", [])]
+        if not video_ids:
+            break
             
-    df = pd.DataFrame(records)
+        # Batch fetch video duration and metrics
+        videos_req = youtube.videos().list(
+            part="snippet,contentDetails,statistics",
+            id=",".join(video_ids)
+        )
+        videos_res = videos_req.execute()
+        
+        for item in videos_res.get("items", []):
+            duration_iso = item["contentDetails"]["duration"]
+            duration_sec = isodate.parse_duration(duration_iso).total_seconds()
+            
+            # Filter: Keep only full-length podcast episodes (>= 20 minutes)
+            if duration_sec >= 1200:
+                podcast_records.append({
+                    "video_id": item["id"],
+                    "title": item["snippet"]["title"],
+                    "published_at": item["snippet"]["publishedAt"],
+                    "view_count": int(item["statistics"].get("viewCount", 0)),
+                    "like_count": int(item["statistics"].get("likeCount", 0)),
+                    "comment_count": int(item["statistics"].get("commentCount", 0)),
+                    "duration_seconds": duration_sec
+                })
+                if len(podcast_records) >= target_podcast_count:
+                    break
+                    
+        next_page_token = playlist_res.get("nextPageToken")
+        if not next_page_token:
+            break
+            
+    df = pd.DataFrame(podcast_records)
     os.makedirs(os.path.dirname(output_csv), exist_ok=True)
     df.to_csv(output_csv, index=False)
     return df

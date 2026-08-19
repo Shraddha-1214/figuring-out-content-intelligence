@@ -292,13 +292,14 @@ with tab_briefing:
     st.write("")
     col_in1, col_in2 = st.columns([2, 1])
     with col_in1:
-        guest_name = st.text_input("Prospective Guest Name", value="Dr. Arvind Kumar", key="guest_name_input")
+        guest_name = st.text_input("Prospective Guest Name", value="Aimen Dean", key="guest_name_input")
     with col_in2:
         topic_domain = st.selectbox("Topic Vertical", [
-            "Sports, Athletes & High Performance",
+            "Espionage, Counter-Terrorism & Intelligence",
             "True Crime & Forensic Psychology",
             "Geopolitics & National Security",
             "Education & Competitive Exams",
+            "Sports, Athletes & High Performance",
             "Business, Startups & Venture Capital",
             "Health, Biohacking & Neuroscience", 
             "Personal Finance & Wealth", 
@@ -307,48 +308,53 @@ with tab_briefing:
         ], key="guest_topic_select")
 
     if st.button("Generate Pre-Interview Briefing", type="primary", key="btn_gen_briefing"):
+        from src.dossier_engine import generate_dynamic_dossier
+        
+        with st.spinner(f"Extracting intelligence background and question arcs for {guest_name}..."):
+            dossier = generate_dynamic_dossier(guest_name, topic_domain)
+
         st.write("")
-        st.markdown(f"#### Research Dossier: **{guest_name}** ({topic_domain})")
+        st.markdown(f"#### 👤 Intelligence Dossier: **{guest_name}** (`{topic_domain}`)")
+        
+        # Background summary banner
+        st.markdown(f"""
+        <div class="callout-box" style="margin-top: 0px; margin-bottom: 20px;">
+            <b>Verified Entity Profile:</b> {dossier['bio']}
+        </div>
+        """, unsafe_allow_html=True)
         
         c_left, c_right = st.columns(2)
 
         with c_left:
             st.markdown(f"""
             <div class="content-box">
-                <div class="box-heading">📌 1. Strategic Framing & Angle</div>
+                <div class="box-heading">📌 1. Verified Background & Operational Anchors</div>
                 <div class="box-body">
                     <ul>
-                        <li><b>Domain Focus:</b> {topic_domain}</li>
-                        <li><b>Audience Tension:</b> Actionable operational truths vs. standard industry clichés.</li>
-                        <li><b>Editorial Objective:</b> Demystify domain-specific playbooks into concrete consumer takeaways.</li>
+                        {"".join([f"<li>{fact}</li>" for fact in dossier['key_facts']])}
                     </ul>
                 </div>
             </div>
             """, unsafe_allow_html=True)
 
-            st.markdown("""
+            st.markdown(f"""
             <div class="content-box">
-                <div class="box-heading">❓ 2. High-Impact Question Arc</div>
+                <div class="box-heading">❓ 2. High-Friction Question Arc</div>
                 <div class="box-body">
                     <ol>
-                        <li><b>The Contrarian Hook:</b> "What is the most widely repeated rule in your domain that you believe is completely wrong?"</li>
-                        <li><b>The Data Reality:</b> "Over the last 3 years, what macro shift is taking place that the general audience is overlooking?"</li>
-                        <li><b>The Bottleneck:</b> "Where do 90% of practitioners fail right before they reach mastery?"</li>
-                        <li><b>The Execution:</b> "If an ambitious individual started today, what is the single most important lever to focus on?"</li>
+                        {"".join([f"<li><b>{q.split('?')[0]}?</b></li>" for q in dossier['questions']])}
                     </ol>
                 </div>
             </div>
             """, unsafe_allow_html=True)
 
         with c_right:
-            st.markdown("""
+            st.markdown(f"""
             <div class="content-box">
                 <div class="box-heading">🎬 3. Short-Form Hook Concepts (Reels / Shorts)</div>
                 <div class="box-body">
                     <ul>
-                        <li><i>"The uncomfortable reality about this space nobody warns you about..."</i></li>
-                        <li><i>"If you are still approaching this like it's 2020, you're falling behind."</i></li>
-                        <li><i>"The exact 3-step framework top operators use behind closed doors."</i></li>
+                        {"".join([f"<li><i>\"{h}\"</i></li>" for h in dossier['hooks']])}
                     </ul>
                 </div>
             </div>
@@ -356,11 +362,11 @@ with tab_briefing:
 
             st.markdown("""
             <div class="content-box">
-                <div class="box-heading">⚠️ 4. Editorial Guardrails</div>
+                <div class="box-heading">⚠️ 4. Editorial & Host Guardrails</div>
                 <div class="box-body">
                     <ul>
-                        <li>Ground all technical terminology into concrete, everyday analogies.</li>
-                        <li>Back all historical and financial claims with verified data points.</li>
+                        <li>Cross-verify sensitive geopolitical & intelligence claims against declassified records.</li>
+                        <li>Anchor abstract geopolitical dynamics into high-stakes personal experiences.</li>
                     </ul>
                 </div>
             </div>
